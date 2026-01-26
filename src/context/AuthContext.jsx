@@ -1,45 +1,50 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const AuthContext = createContext(null);
 
+const STORAGE_KEY = "patientipr_auth";
+
 export function AuthProvider({ children }) {
-  const [auth, setAuth] = useState({
-    token: null,
-    role: null,
-    user: null,
-  });
+  const [auth, setAuth] = useState(null); 
+  // auth = { token, role, username }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    const userRaw = localStorage.getItem("user");
-
-    setAuth({
-      token: token || null,
-      role: role || null,
-      user: userRaw ? JSON.parse(userRaw) : null,
-    });
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        setAuth(JSON.parse(saved));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
   }, []);
 
-  const login = ({ token, role, user }) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    localStorage.setItem("user", JSON.stringify(user));
-    setAuth({ token, role, user });
+  const login = (payload) => {
+    // payload = { token, role, username }
+    setAuth(payload);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
-    setAuth({ token: null, role: null, user: null });
+    setAuth(null);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
-  return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      auth,
+      isLoggedIn: !!auth?.token,
+      role: auth?.role || null,
+      username: auth?.username || null,
+      login,
+      logout,
+    }),
+    [auth]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  return useContext(AuthContext);
+}

@@ -30,7 +30,7 @@ export default function AppRoutes() {
         {/* Unauthorized */}
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/user/services" element={<UserServices />} />
-        <Route path="/user/services/:type" element={<UserServiceDetails />} />
+<Route path="/user/services/:type" element={<UserServiceDetails />} />
 
         {/* Protected Dashboards */}
         <Route
