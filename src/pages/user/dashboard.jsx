@@ -1,231 +1,167 @@
-import React, { useMemo } from "react";
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 
+/* ================== DATA MAPS (BACKEND READY) ================== */
+
+const services = [
+  { id: 1, title: "Patent", desc: "File & track patent requests", icon: "💡" },
+  { id: 2, title: "Trademark", desc: "Protect your brand identity", icon: "🛡️" },
+  { id: 3, title: "Copyright", desc: "Secure creative work", icon: "📄" },
+  { id: 4, title: "Design", desc: "Register your design", icon: "✏️" },
+];
+
+const recentApplications = []; // empty = no activity
+
+const portfolio = []; // future backend
+
+/* ================== MAIN COMPONENT ================== */
+
 export default function UserDashboard() {
-  const navigate = useNavigate();
   const { auth, logout } = useAuth();
+  const user = auth?.user || { name: "User", email: "Not available" };
 
-  // Backend-proof user
-  const user = auth?.user || {};
-  const userName = user?.name || "User";
-  const userEmail = user?.email || "Not available";
-
-  // Backend-proof services map
-  const services = useMemo(
-    () => [
-      { key: "patent", title: "Patent", desc: "File & track patents", icon: "💡" },
-      { key: "trademark", title: "Trademark", desc: "Protect your brand", icon: "🛡️" },
-      { key: "copyright", title: "Copyright", desc: "Secure your work", icon: "📄" },
-      { key: "design", title: "Design", desc: "Design registration", icon: "✏️" },
-    ],
-    []
-  );
-
-  const stats = useMemo(
-    () => [
-      { label: "Total Requests", value: 0 },
-      { label: "In Review", value: 0 },
-      { label: "Approved", value: 0 },
-      { label: "Need Action", value: 0 },
-    ],
-    []
-  );
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
-  const handleViewAll = () => {
-    navigate("/user/services");
-  };
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <div className="min-h-screen bg-[#F6F9FF]">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr] gap-6">
-          {/* SIDEBAR */}
-          <motion.aside
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.35 }}
-            className="bg-white border border-slate-200 rounded-3xl shadow-sm p-5 h-fit sticky top-6"
+    <div className="min-h-screen bg-gradient-to-br from-[#EEF3FF] to-[#F9FBFF] p-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+
+        {/* ================= SIDEBAR ================= */}
+        <aside className="bg-gradient-to-b from-blue-600 to-blue-700 text-white rounded-3xl p-5 shadow-xl sticky top-6 h-fit">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="h-12 w-12 rounded-2xl bg-white text-blue-700 font-extrabold flex items-center justify-center">
+              {user.name[0]}
+            </div>
+            <div>
+              <p className="font-bold">{user.name}</p>
+              <p className="text-xs text-white/70">{user.email}</p>
+            </div>
+          </div>
+
+          <SidebarButton label="Dashboard" active={activeTab} tab="dashboard" setTab={setActiveTab} />
+          <SidebarButton label="My Requests" active={activeTab} tab="requests" setTab={setActiveTab} />
+          <SidebarButton label="My Portfolio" active={activeTab} tab="portfolio" setTab={setActiveTab} />
+          <SidebarButton label="Cost Estimator" active={activeTab} tab="estimator" setTab={setActiveTab} />
+          <SidebarButton label="Settings" active={activeTab} tab="settings" setTab={setActiveTab} />
+
+          <button
+            onClick={logout}
+            className="mt-8 w-full bg-white text-blue-700 font-extrabold py-3 rounded-2xl hover:scale-[1.02] transition"
           >
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold">
-                {userName?.[0]?.toUpperCase() || "U"}
-              </div>
+            Logout
+          </button>
+        </aside>
 
-              <div className="min-w-0">
-                <p className="font-extrabold text-slate-900 truncate">
-                  {userName}
-                </p>
-                <p className="text-xs text-slate-500 truncate">{userEmail}</p>
-              </div>
-            </div>
+        {/* ================= CONTENT ================= */}
+        <main className="bg-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
 
-            <div className="mt-6 space-y-2">
-              <button
-                onClick={() => navigate("/user/dashboard")}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold bg-blue-600 text-white shadow"
-              >
-                📊 <span className="text-sm">Dashboard</span>
-              </button>
+          <AnimatePresence mode="wait">
+            {activeTab === "dashboard" && <DashboardTab key="dashboard" user={user} />}
+            {activeTab === "requests" && <RequestsTab key="requests" />}
+            {activeTab === "portfolio" && <PortfolioTab key="portfolio" />}
+            {activeTab === "estimator" && <EstimatorTab key="estimator" />}
+            {activeTab === "settings" && <SettingsTab key="settings" />}
+          </AnimatePresence>
 
-              <button
-                onClick={() => navigate("/user/requests")}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold bg-slate-50 text-slate-700 hover:bg-slate-100 transition"
-              >
-                📌 <span className="text-sm">My Requests</span>
-              </button>
-
-              <button
-                onClick={() => navigate("/user/estimator")}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold bg-slate-50 text-slate-700 hover:bg-slate-100 transition"
-              >
-                🧮 <span className="text-sm">Cost Estimator</span>
-              </button>
-
-              <button
-                onClick={() => navigate("/user/settings")}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold bg-slate-50 text-slate-700 hover:bg-slate-100 transition"
-              >
-                ⚙️ <span className="text-sm">Settings</span>
-              </button>
-            </div>
-
-            {/* LOGOUT WORKING */}
-            <button
-              onClick={handleLogout}
-              className="mt-6 w-full px-4 py-3 rounded-2xl border border-slate-200 font-extrabold text-slate-700 hover:bg-slate-50 transition"
-            >
-              Logout
-            </button>
-          </motion.aside>
-
-          {/* MAIN */}
-          <main className="space-y-6">
-            {/* HEADER */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35 }}
-              className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-            >
-              <div>
-                <p className="text-sm text-slate-500 font-semibold">
-                  Good Morning,
-                </p>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                  {userName} 👋
-                </h1>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
-                  <span className="text-slate-400">🔎</span>
-                  <input
-                    className="ml-2 outline-none text-sm w-56"
-                    placeholder="Search requests..."
-                  />
-                </div>
-
-                <button className="h-11 w-11 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center hover:shadow-md transition">
-                  🔔
-                </button>
-              </div>
-            </motion.div>
-
-            {/* STATS */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {stats.map((s, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm"
-                >
-                  <p className="text-xs text-slate-500 font-bold">{s.label}</p>
-                  <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                    {s.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="rounded-[28px] overflow-hidden shadow-[0_18px_60px_rgba(37,99,235,0.18)]">
-              <div className="relative bg-gradient-to-br from-blue-600 via-blue-600 to-blue-700 px-6 sm:px-10 py-8">
-                <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
-                <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
-
-                <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                  <div>
-                    <h2 className="text-white text-xl sm:text-2xl font-extrabold">
-                      Start New Application
-                    </h2>
-                    <p className="mt-2 text-white/85 text-sm sm:text-base max-w-xl">
-                      Submit basic details now and track your request status anytime.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={() => navigate("/user/new-request")}
-                      className="px-6 py-3 rounded-2xl bg-white text-blue-700 font-extrabold shadow hover:opacity-95 transition"
-                    >
-                      ➕ New Filing
-                    </button>
-                    <button
-                      onClick={() => navigate("/user/estimator")}
-                      className="px-6 py-3 rounded-2xl bg-white/15 border border-white/25 text-white font-extrabold hover:bg-white/20 transition"
-                    >
-                      🧮 Estimator
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* IP SERVICES */}
-            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-slate-900">
-                  IP Services
-                </h3>
-
-                {/* VIEW ALL WORKING */}
-                <button
-                  onClick={handleViewAll}
-                  className="text-blue-700 font-extrabold text-sm hover:underline"
-                >
-                  View All
-                </button>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {services.map((s) => (
-                  <motion.button
-                    key={s.key}
-                    whileHover={{ y: -4 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => navigate(`/user/services/${s.key}`)}
-                    className="text-left rounded-3xl border border-slate-200 bg-slate-50 p-5 hover:bg-white hover:shadow-md transition"
-                  >
-                    <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center text-xl">
-                      {s.icon}
-                    </div>
-                    <h4 className="mt-4 font-extrabold text-slate-900">
-                      {s.title}
-                    </h4>
-                    <p className="mt-1 text-sm text-slate-500">{s.desc}</p>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          </main>
-        </div>
+        </main>
       </div>
     </div>
+  );
+}
+
+/* ================= SIDEBAR BUTTON ================= */
+
+function SidebarButton({ label, tab, active, setTab }) {
+  return (
+    <button
+      onClick={() => setTab(tab)}
+      className={`w-full mb-2 px-4 py-3 rounded-2xl text-left font-bold transition
+        ${active === tab ? "bg-white text-blue-700 shadow" : "hover:bg-white/10"}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+/* ================= TABS ================= */
+
+function DashboardTab({ user }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.35 }}
+    >
+      <h1 className="text-3xl font-extrabold text-slate-900">
+        Welcome back, {user.name} 👋
+      </h1>
+      <p className="text-slate-500 mt-2">
+        Manage and track all your intellectual property requests from one place.
+      </p>
+
+      {/* SERVICES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mt-8">
+        {services.map((s) => (
+          <motion.div
+            key={s.id}
+            whileHover={{ y: -6 }}
+            className="rounded-3xl p-6 bg-gradient-to-br from-blue-50 to-white border shadow-sm"
+          >
+            <div className="text-2xl">{s.icon}</div>
+            <h3 className="mt-4 font-extrabold">{s.title}</h3>
+            <p className="text-sm text-slate-500">{s.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* RECENT APPLICATIONS */}
+      <div className="mt-10">
+        <h2 className="text-xl font-extrabold mb-4">Recent Applications</h2>
+
+        {recentApplications.length === 0 ? (
+          <div className="rounded-2xl bg-slate-50 border p-6 text-slate-500">
+            No recent activity yet.
+          </div>
+        ) : (
+          recentApplications.map((a) => (
+            <div key={a.id}>{a.title}</div>
+          ))
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function RequestsTab() {
+  return <TabWrapper title="My Requests" text="All your submitted requests will appear here." />;
+}
+
+function PortfolioTab() {
+  return <TabWrapper title="My Portfolio" text="Your approved and completed IP assets will be shown here." />;
+}
+
+function EstimatorTab() {
+  return <TabWrapper title="Cost Estimator" text="Estimate filing costs before submitting your request." />;
+}
+
+function SettingsTab() {
+  return <TabWrapper title="Settings" text="Manage your profile and preferences." />;
+}
+
+/* ================= COMMON TAB UI ================= */
+
+function TabWrapper({ title, text }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <h1 className="text-2xl font-extrabold">{title}</h1>
+      <p className="text-slate-500 mt-3">{text}</p>
+    </motion.div>
   );
 }
