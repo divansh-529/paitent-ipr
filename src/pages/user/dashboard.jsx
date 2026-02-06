@@ -2,274 +2,358 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 
-/* ================== DATA MAPS (BACKEND READY) ================== */
+/* ===================== DATA ===================== */
 
-const services = [
-  { id: 1, key: "patent", title: "Patent", desc: "File & track patent requests", icon: "💡" },
-  { id: 2, key: "trademark", title: "Trademark", desc: "Protect your brand identity", icon: "🛡️" },
-  { id: 3, key: "copyright", title: "Copyright", desc: "Secure creative work", icon: "📄" },
-  { id: 4, key: "design", title: "Design", desc: "Register your design", icon: "✏️" },
+const SERVICES = [
+  { key: "patent", title: "Patent", desc: "Protect inventions & processes", icon: "💡", base: 6600 },
+  { key: "trademark", title: "Trademark", desc: "Brand, logo & slogan", icon: "🛡️", base: 4500 },
+  { key: "copyright", title: "Copyright", desc: "Creative work protection", icon: "📄", base: 500 },
+  { key: "design", title: "Design", desc: "Product & industrial design", icon: "✏️", base: 5000 },
 ];
 
-const recentApplications = []; // backend will fill
-const portfolio = []; // backend will fill
-
-/* ================== MAIN COMPONENT ================== */
+/* ===================== MAIN ===================== */
 
 export default function UserDashboard() {
   const { auth, logout } = useAuth();
-  const user = auth?.user || { name: "User", email: "Not available" };
+  const user = auth?.user || { name: "User", email: "user@email.com" };
 
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [filingStep, setFilingStep] = useState(1);
-  const [selectedService, setSelectedService] = useState(null);
+  const [tab, setTab] = useState("dashboard");
+  const [step, setStep] = useState(1);
+  const [service, setService] = useState(null);
+  const [files, setFiles] = useState([]);
+
+  /* -------- File handlers -------- */
+  const addFiles = (newFiles) => {
+    setFiles((prev) => [...prev, ...newFiles]);
+  };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FF] p-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+    <div className="min-h-screen bg-[#F4F7FF] flex flex-col lg:flex-row">
 
-        {/* ================= SIDEBAR ================= */}
-        <aside className="bg-gradient-to-b from-blue-600 to-blue-700 text-white rounded-3xl p-5 shadow-xl sticky top-6 h-fit">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="h-12 w-12 rounded-2xl bg-white text-blue-700 font-extrabold flex items-center justify-center">
-              {user.name?.[0]?.toUpperCase() || "U"}
-            </div>
-            <div>
-              <p className="font-bold">{user.name}</p>
-              <p className="text-xs text-white/70">{user.email}</p>
-            </div>
+      {/* ================= DESKTOP SIDEBAR ================= */}
+      <aside className="hidden lg:flex w-[280px] bg-gradient-to-b from-blue-600 to-indigo-700 text-white p-6 flex-col">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="h-12 w-12 rounded-2xl bg-white text-blue-700 flex items-center justify-center font-extrabold">
+            {user.name[0]}
           </div>
+          <div>
+            <p className="font-bold">{user.name}</p>
+            <p className="text-xs text-white/70">{user.email}</p>
+          </div>
+        </div>
 
-          <SidebarButton label="Dashboard" tab="dashboard" active={activeTab} setTab={setActiveTab} />
-          <SidebarButton label="My Requests" tab="requests" active={activeTab} setTab={setActiveTab} />
-          <SidebarButton label="My Portfolio" tab="portfolio" active={activeTab} setTab={setActiveTab} />
-          <SidebarButton label="Cost Estimator" tab="estimator" active={activeTab} setTab={setActiveTab} />
-          <SidebarButton label="Settings" tab="settings" active={activeTab} setTab={setActiveTab} />
+        {["dashboard", "portfolio", "estimator", "settings"].map((t) => (
+          <SidebarBtn key={t} tab={t} active={tab} setTab={setTab} />
+        ))}
 
-          <button
-            onClick={logout}
-            className="mt-8 w-full bg-white text-blue-700 font-extrabold py-3 rounded-2xl hover:scale-[1.02] transition"
-          >
-            Logout
-          </button>
-        </aside>
+        <button
+          onClick={logout}
+          className="mt-auto bg-white text-blue-700 py-3 rounded-xl font-extrabold"
+        >
+          Logout
+        </button>
+      </aside>
 
-        {/* ================= CONTENT ================= */}
-        <main className="bg-white rounded-3xl p-8 shadow-xl overflow-hidden">
+      {/* ================= CONTENT ================= */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-10 pb-24 lg:pb-10">
 
-          <AnimatePresence mode="wait">
-            {activeTab === "dashboard" && (
-              <DashboardTab
-                key="dashboard"
-                user={user}
-                services={services}
-                recentApplications={recentApplications}
-                onStartFiling={() => {
-                  setActiveTab("newFiling");
-                  setFilingStep(1);
-                }}
-              />
-            )}
+        <AnimatePresence mode="wait">
 
-            {activeTab === "newFiling" && (
-              <NewFilingTab
-                key="newFiling"
-                services={services}
-                filingStep={filingStep}
-                setFilingStep={setFilingStep}
-                selectedService={selectedService}
-                setSelectedService={setSelectedService}
-                goBack={() => setActiveTab("dashboard")}
-              />
-            )}
+          {/* DASHBOARD */}
+          {tab === "dashboard" && (
+            <motion.div
+              key="dash"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <h1 className="text-3xl font-extrabold">
+                Welcome back, {user.name} 👋
+              </h1>
+              <p className="text-slate-500 mt-2">
+                Track and manage your IP filings
+              </p>
 
-            {activeTab === "requests" && <SimpleTab key="req" title="My Requests" text="All submitted requests will appear here." />}
-            {activeTab === "portfolio" && <SimpleTab key="port" title="My Portfolio" text="Your approved IP assets will appear here." />}
-            {activeTab === "estimator" && <SimpleTab key="est" title="Cost Estimator" text="Estimate filing costs before submission." />}
-            {activeTab === "settings" && <SimpleTab key="set" title="Settings" text="Manage your profile and preferences." />}
-          </AnimatePresence>
+              {/* CTA */}
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                className="mt-8 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white flex flex-col sm:flex-row justify-between gap-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-extrabold">Start New Filing</h2>
+                  <p className="text-white/80 mt-1">
+                    Submit your request in minutes
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTab("estimator");
+                    setService(null);
+                  }}
+                  className="bg-white text-blue-700 px-8 py-4 rounded-xl font-extrabold"
+                >
+                  Start →
+                </button>
+              </motion.div>
 
-        </main>
-      </div>
+              {/* SERVICES */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+                {SERVICES.map((s) => (
+                  <div key={s.key} className="bg-white rounded-3xl p-6 shadow">
+                    <div className="text-2xl">{s.icon}</div>
+                    <h3 className="mt-3 font-extrabold">{s.title}</h3>
+                    <p className="text-sm text-slate-500">{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ================= COST ESTIMATOR ================= */}
+          {tab === "estimator" && (
+            <motion.div
+              key="est"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+            >
+              {!service ? (
+                <>
+                  <h2 className="text-2xl font-extrabold mb-6">
+                    Cost Estimator
+                  </h2>
+
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {SERVICES.map((s) => (
+                      <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        key={s.key}
+                        onClick={() => setService(s)}
+                        className="bg-white rounded-3xl p-6 shadow text-left"
+                      >
+                        <div className="text-2xl">{s.icon}</div>
+                        <h3 className="mt-3 font-extrabold">{s.title}</h3>
+                        <p className="text-sm text-slate-500">{s.desc}</p>
+                      </motion.button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setService(null)}
+                    className="text-sm text-blue-600 mb-4"
+                  >
+                    ← Back
+                  </button>
+
+                  <div className="bg-white rounded-3xl p-6 shadow">
+                    <h3 className="text-xl font-extrabold mb-4">
+                      {service.title} Estimate
+                    </h3>
+
+                    <div className="space-y-3">
+                      <Row label="Government Fee" value={`₹${service.base}`} />
+                      <Row label="Professional Fee" value="₹5,000" />
+                    </div>
+                  </div>
+
+                  {/* Sticky total */}
+                  <div className="fixed lg:static bottom-16 left-0 right-0 bg-white border-t p-4 mt-6">
+                    <div className="flex justify-between items-center max-w-3xl mx-auto">
+                      <div>
+                        <p className="text-xs text-slate-500">
+                          Total Estimated Cost
+                        </p>
+                        <p className="text-xl font-extrabold">
+                          ₹{service.base + 5000}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setTab("filing");
+                          setStep(1);
+                        }}
+                        className="bg-blue-600 text-white px-6 py-3 rounded-xl font-extrabold"
+                      >
+                        Start Filing
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* ================= FILING ================= */}
+          {tab === "filing" && (
+            <motion.div
+              key="filing"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {/* Stepper */}
+              <div className="flex gap-2 mb-6">
+                {[1, 2, 3].map((s) => (
+                  <div
+                    key={s}
+                    className={`h-2 flex-1 rounded-full ${
+                      step >= s ? "bg-blue-600" : "bg-slate-200"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* STEP 1 */}
+              {step === 1 && (
+                <>
+                  <h2 className="text-xl font-extrabold mb-4">
+                    Project Details
+                  </h2>
+                  <input
+                    className="w-full border rounded-xl p-3 mb-3"
+                    placeholder="Project Title"
+                  />
+                  <textarea
+                    className="w-full border rounded-xl p-3"
+                    placeholder="Brief Summary"
+                  />
+                  <button
+                    onClick={() => setStep(2)}
+                    className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-xl"
+                  >
+                    Next →
+                  </button>
+                </>
+              )}
+
+              {/* STEP 2 – FILE UPLOAD */}
+              {step === 2 && (
+                <>
+                  <h2 className="text-xl font-extrabold mb-4">
+                    Upload Files
+                  </h2>
+
+                  <div
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      addFiles([...e.dataTransfer.files]);
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="border-2 border-dashed rounded-2xl p-8 text-center bg-slate-50"
+                  >
+                    <input
+                      type="file"
+                      multiple
+                      hidden
+                      id="fileUpload"
+                      onChange={(e) => addFiles([...e.target.files])}
+                    />
+                    <label htmlFor="fileUpload" className="cursor-pointer">
+                      <p className="font-extrabold">Upload files</p>
+                      <p className="text-sm text-slate-500">
+                        Click or drag & drop
+                      </p>
+                    </label>
+                  </div>
+
+                  {/* FILE PREVIEW */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {files.map((f, i) => (
+                      <span
+                        key={i}
+                        className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs"
+                      >
+                        📎 {f.name}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-3 mt-6">
+                    <button onClick={() => setStep(1)}>Back</button>
+                    <button
+                      onClick={() => setStep(3)}
+                      className="bg-blue-600 text-white px-6 py-3 rounded-xl"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* STEP 3 */}
+              {step === 3 && (
+                <>
+                  <h2 className="text-xl font-extrabold mb-4">
+                    Review & Submit
+                  </h2>
+                  <p className="text-slate-500 mb-6">
+                    Your request will be reviewed by our team.
+                  </p>
+                  <button
+                    onClick={() => setTab("dashboard")}
+                    className="bg-green-600 text-white px-6 py-3 rounded-xl font-extrabold"
+                  >
+                    Submit for Review
+                  </button>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+
+      {/* ================= MOBILE NAV ================= */}
+      <MobileNav tab={tab} setTab={setTab} />
     </div>
   );
 }
 
-/* ================= SIDEBAR BUTTON ================= */
+/* ================= COMPONENTS ================= */
 
-function SidebarButton({ label, tab, active, setTab }) {
+function SidebarBtn({ tab, active, setTab }) {
   return (
     <button
       onClick={() => setTab(tab)}
-      className={`w-full mb-2 px-4 py-3 rounded-2xl font-bold text-left transition
-        ${active === tab ? "bg-white text-blue-700 shadow" : "hover:bg-white/10"}`}
+      className={`mb-2 px-4 py-3 rounded-xl font-bold text-left ${
+        active === tab ? "bg-white text-blue-700" : "hover:bg-white/10"
+      }`}
     >
-      {label}
+      {tab.charAt(0).toUpperCase() + tab.slice(1)}
     </button>
   );
 }
 
-/* ================= DASHBOARD TAB ================= */
+function MobileNav({ tab, setTab }) {
+  const items = [
+    ["dashboard", "🏠"],
+    ["portfolio", "📁"],
+    ["estimator", "💰"],
+    ["settings", "⚙️"],
+  ];
 
-function DashboardTab({ user, services, recentApplications, onStartFiling }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.35 }}
-    >
-      <h1 className="text-3xl font-extrabold text-slate-900">
-        Welcome back, {user.name} 👋
-      </h1>
-      <p className="text-slate-500 mt-2">
-        Manage and track all your IP requests from one dashboard.
-      </p>
-
-      {/* START NEW FILING CTA */}
-      <div className="mt-8 rounded-[32px] bg-gradient-to-br from-blue-600 to-indigo-700 p-8 shadow-xl text-white flex flex-col md:flex-row justify-between gap-6">
-        <div>
-          <h2 className="text-2xl font-extrabold">Start New Filing</h2>
-          <p className="text-white/85 mt-2 max-w-lg">
-            Submit your request in minutes and track progress anytime.
-          </p>
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 lg:hidden">
+      {items.map(([t, icon]) => (
         <button
-          onClick={onStartFiling}
-          className="px-8 py-4 rounded-2xl bg-white text-blue-700 font-extrabold hover:scale-105 transition"
+          key={t}
+          onClick={() => setTab(t)}
+          className={`text-xl ${
+            tab === t ? "text-blue-600" : "text-slate-400"
+          }`}
         >
-          ➕ Start New Filing
+          {icon}
         </button>
-      </div>
-
-      {/* SERVICES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mt-8">
-        {services.map((s) => (
-          <div key={s.id} className="rounded-3xl p-6 bg-slate-50 border">
-            <div className="text-2xl">{s.icon}</div>
-            <h3 className="mt-4 font-extrabold">{s.title}</h3>
-            <p className="text-sm text-slate-500">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* RECENT APPLICATIONS */}
-      <div className="mt-10">
-        <h2 className="text-xl font-extrabold mb-4">Recent Applications</h2>
-        {recentApplications.length === 0 ? (
-          <div className="rounded-2xl bg-slate-50 border p-6 text-slate-500">
-            No recent activity yet.
-          </div>
-        ) : (
-          recentApplications.map((a) => <div key={a.id}>{a.title}</div>)
-        )}
-      </div>
-    </motion.div>
+      ))}
+    </nav>
   );
 }
 
-/* ================= NEW FILING FLOW ================= */
-
-function NewFilingTab({
-  services,
-  filingStep,
-  setFilingStep,
-  selectedService,
-  setSelectedService,
-  goBack,
-}) {
+function Row({ label, value }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -30 }}
-      transition={{ duration: 0.35 }}
-    >
-      <p className="text-sm font-bold text-blue-600 mb-4">
-        Step {filingStep} of 3
-      </p>
-
-      {/* STEP 1 */}
-      {filingStep === 1 && (
-        <>
-          <h2 className="text-xl font-extrabold mb-4">
-            What would you like to protect?
-          </h2>
-          {services.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => {
-                setSelectedService(s);
-                setFilingStep(2);
-              }}
-              className="w-full mb-3 p-4 rounded-2xl border hover:border-blue-500 text-left"
-            >
-              <p className="font-bold">{s.title}</p>
-              <p className="text-sm text-slate-500">{s.desc}</p>
-            </button>
-          ))}
-        </>
-      )}
-
-      {/* STEP 2 */}
-      {filingStep === 2 && (
-        <>
-          <h2 className="text-xl font-extrabold mb-4">
-            Basic Project Information
-          </h2>
-
-          <input className="w-full border rounded-xl p-3 mb-3" placeholder="Project Title" />
-          <textarea className="w-full border rounded-xl p-3" placeholder="Brief summary" />
-
-          <div className="flex justify-between mt-4">
-            <button onClick={() => setFilingStep(1)}>Back</button>
-            <button
-              onClick={() => setFilingStep(3)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl"
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* STEP 3 */}
-      {filingStep === 3 && (
-        <>
-          <h2 className="text-xl font-extrabold mb-4">
-            Review & Submit
-          </h2>
-
-          <div className="bg-slate-50 rounded-xl p-4 mb-4">
-            <p><b>Service:</b> {selectedService?.title}</p>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setFilingStep(2)}>Back</button>
-            <button
-              onClick={goBack}
-              className="px-5 py-2 bg-green-600 text-white rounded-xl"
-            >
-              Submit for Review
-            </button>
-          </div>
-        </>
-      )}
-    </motion.div>
-  );
-}
-
-/* ================= SIMPLE TABS ================= */
-
-function SimpleTab({ title, text }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <h1 className="text-2xl font-extrabold">{title}</h1>
-      <p className="text-slate-500 mt-3">{text}</p>
-    </motion.div>
+    <div className="flex justify-between bg-slate-50 p-4 rounded-xl">
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="font-extrabold">{value}</span>
+    </div>
   );
 }
